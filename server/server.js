@@ -1,14 +1,16 @@
 import express from "express";
-import {configDotenv} from "dotenv";
+import { configDotenv } from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
-import {toNodeHandler} from "better-auth/node";
+import { toNodeHandler } from "better-auth/node";
+import { logger, morganMiddleware } from "./utils/logger.js";
 
 
 import connectDB from "./config/db.js"
-import {auth} from "./routes/auth.routes.js";
+import { auth } from "./routes/auth.routes.js";
 import filesRoutes from './routes/files.routes.js'
 import { requireAuth } from './middleware/auth.middleware.js'
+import chatRoutes from './routes/chat.routes.js'
 
 
 // Load environment variables
@@ -32,19 +34,23 @@ app.use(
 app.all("/api/auth/*", toNodeHandler(auth));
 
 //for better-auth we have to use express.json after auth
-app.use(express.json());
+app.use(morganMiddleware);
 app.use(helmet());
+app.use(express.json());
 
-app.use("/api/file",requireAuth, filesRoutes);
+app.use("/api/file", requireAuth, filesRoutes);
+app.use("/api/query", requireAuth, chatRoutes);
 
-app.get('/', (req, res)=> {{
-    res.send("Hello world")
-}})
+app.get('/', (req, res) => {
+    {
+        res.send("Hello world")
+    }
+})
 
-app.get('/api/protected', requireAuth, (_req, res)=> {
-  res.json({
-    msg: "you are procted"
-  })
+app.get('/api/protected', requireAuth, (_req, res) => {
+    res.json({
+        msg: "you are procted"
+    })
 })
 
 
@@ -54,7 +60,7 @@ connectDB().then(async () => {
         console.log(`Server running on port: ${PORT}`);
     })
 })
-.catch((err) => {
-    console.error(err);
-    process.exit(1);
-});
+    .catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });
